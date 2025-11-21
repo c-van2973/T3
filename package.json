@@ -1,20 +1,33 @@
 {
   "name": "trifecta",
   "version": "1.0.0",
+  "description": "Vaughn's Trio: SwankyBoyz | VaughnSterlingTours | VaughnSterling",
   "private": true,
   "scripts": {
     "setup": "node scripts/setup-instructions.js",
+    "install:all": "npm install && npm --prefix apps/swankyboyz install && npm --prefix apps/vaughnsterlingtours install && npm --prefix apps/vaughnsterling install",
     "dev:swanky": "npm --prefix apps/swankyboyz run dev",
     "dev:tours": "npm --prefix apps/vaughnsterlingtours run dev",
     "dev:brand": "npm --prefix apps/vaughnsterling run dev",
     "generate": "node scripts/generate.js",
     "seed": "node scripts/seed.js",
     "db:migrate": "node scripts/db_migrate.js",
-    "build:all": "echo 'Build each app: npm --prefix apps/<app> run build'",
+    "build:all": "npm --prefix apps/swankyboyz run build && npm --prefix apps/vaughnsterlingtours run build && npm --prefix apps/vaughnsterling run build",
     "build:index:swanky": "node scripts/build_index.js swankyboyz",
+    "build:index:tours": "node scripts/build_index.js vaughnsterlingtours",
+    "build:index:brand": "node scripts/build_index.js vaughnsterling",
+    "build:articles:swanky": "SITE=swankyboyz node scripts/generate_articles.js",
+    "build:articles:tours": "SITE=vaughnsterlingtours node scripts/generate_articles.js",
+    "build:articles:brand": "SITE=vaughnsterling node scripts/generate_articles.js",
     "sitemap:swanky": "node scripts/generate_sitemap.js swankyboyz https://swankyboyz.com",
-    "build:articles:swanky": "node scripts/generate_articles.js",
-    "deploy": "echo 'See README.md for Cloudflare Pages deploy steps; run per-app deploy from Cloudflare Pages UI or use wrangler for functions'"
+    "sitemap:tours": "node scripts/generate_sitemap.js vaughnsterlingtours https://vaughnsterlingtours.com",
+    "sitemap:brand": "node scripts/generate_sitemap.js vaughnsterling https://vaughnsterling.com",
+    "deploy": "node scripts/deploy_all.js",
+    "deploy:dry-run": "node scripts/deploy_all.js --dry-run",
+    "worker:deploy": "npx wrangler deploy --env production",
+    "worker:tail": "npx wrangler tail",
+    "db:query": "npx wrangler d1 execute vaughn-main-db --command",
+    "analytics:summary": "npx wrangler d1 execute vaughn-main-db --command \"SELECT event, COUNT(*) as count FROM analytics GROUP BY event ORDER BY count DESC LIMIT 10\""
   },
   "engines": {
     "node": ">=18"
