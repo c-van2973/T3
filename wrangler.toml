@@ -1,0 +1,38 @@
+name = "vaughn-trio-worker"
+type = "javascript"
+main = "workers/newsletter/index.js"
+compatibility_date = "2025-11-21"
+
+env.production.vars = { ENVIRONMENT = "production" }
+env.development.vars = { ENVIRONMENT = "development" }
+
+[[d1_databases]]
+binding = "DB"
+database_name = "vaughn-main-db"
+# Set after creating D1:
+# id = "12345678-1234-1234-1234-123456789012"
+
+[vars]
+# Global settings
+ENVIRONMENT = "production"
+
+# Affiliate tags (set in .env / Cloudflare dashboard)
+AMAZON_ASSOCIATE_TAG = "yourtag-20"
+BOOKING_AFFILIATE_ID = "your-booking-id"
+AGODA_AFFILIATE_ID = "your-agoda-id"
+GETYOURGUIDE_PARTNER_ID = "your-getyourguide-id"
+SAFETYWING_AFFILIATE_ID = "your-safetywing-id"
+AIRALO_AFFILIATE_KEY = "your-airalo-key"
+
+# Services
+STRIPE_SECRET = "sk_test_..."
+CONTACT_EMAIL = "contact@vaughnsterling.com"
+
+# Analytics & tracking
+ANALYTICS_ENABLED = "true"
+TRACK_AFFILIATE_CLICKS = "true"
+
+# Site mappings
+SWANKYBOYZ_DOMAIN = "swankyboyz.com"
+VAUGHNSTERLINGTOURS_DOMAIN = "vaughnsterlingtours.com"
+VAUGHNSTERLING_DOMAIN = "vaughnsterling.com"

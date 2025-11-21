@@ -1,17 +1,25 @@
 # Example `wrangler.toml` for SwankyBoyz Cloudflare Worker (newsletter/contact)
 name = "swankyboyz-worker"
-main = "workers/newsletter/index.js"
-
 type = "javascript"
+main = "../../workers/newsletter/index.js"
+compatibility_date = "2025-11-21"
 
-[env.production]
-account_id = "YOUR_CF_ACCOUNT_ID"
-route = "swankyboyz.com/*"
+env.production.vars = { ENVIRONMENT = "production" }
+env.development.vars = { ENVIRONMENT = "development" }
 
 [[d1_databases]]
 binding = "DB"
-database_name = "your-d1-database-name"
+database_name = "swankyboyz-db"
+# After creating D1 database, set the ID here:
+# id = "12345678-1234-1234-1234-123456789012"
 
 [vars]
-AMAZON_ASSOCIATE_TAG = "your-affiliate-tag"
+AMAZON_ASSOCIATE_TAG = "yourtag-20"
+BOOKING_AFFILIATE_ID = ""
+AGODA_AFFILIATE_ID = ""
+GETYOURGUIDE_PARTNER_ID = ""
+SAFETYWING_AFFILIATE_ID = ""
+AIRALO_AFFILIATE_KEY = ""
+STRIPE_SECRET = ""
 CONTACT_EMAIL = "you@example.com"
+SITE_NAME = "swankyboyz"
