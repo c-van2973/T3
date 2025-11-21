@@ -122,19 +122,23 @@ async function optimizeImage(imagePath, outputDir, basename) {
   }
 }
 
-function transformAffiliateLinks(html, slug) {
-  // Add rel/nofollow and target; UTM params will be injected at request time via Worker
+function transformAffiliateLinks(html, slug, productId) {
+  // Convert affiliate links to /r redirect URLs for centralized tracking & tag injection
   return html.replace(/<a[^>]*href=\"([^\"]+)\"[^>]*>(.*?)<\/a>/g, (m, href, text) => {
     try {
       const url = new URL(href, 'https://swankyboyz.com');
-      if (/amazon\./i.test(url.hostname)) {
-        // Mark as affiliate link; worker will inject tag
-        return `<a href="${url.toString()}" rel="nofollow sponsored" target="_blank" class="affiliate-link" data-campaign="${slug}">${text}</a>`;
+      // Detect affiliate networks
+      if (/amazon\./i.test(url.hostname) || /booking\.com/.test(url.hostname) || /agoda\.com/.test(url.hostname) || /getyourguide/.test(url.hostname)) {
+        // Rewrite to /r redirect endpoint
+        const encodedHref = encodeURIComponent(url.toString());
+        const pid = productId || slug;
+        const redirectUrl = `/r?site=swankyboyz&id=${pid}&href=${encodedHref}&article=${slug}`;
+        return `<a href="${redirectUrl}" rel="nofollow sponsored" target="_blank" class="affiliate-link" data-campaign="${slug}" data-product="${pid}">${text}</a>`;
       }
     } catch (e) {
       // ignore
     }
-    // Non-amazon links: open external links in new tab if absolute
+    // Non-affiliate external links: open in new tab
     if (/^https?:\/\//i.test(href)) return `<a href="${href}" target="_blank" rel="noopener">${text}</a>`;
     return `<a href="${href}">${text}</a>`;
   });
@@ -169,31 +173,39 @@ function makePage({ title, meta, contentHtml, slug }) {
     <a href="/" style="color:#ffd700;text-decoration:none;font-weight:700;font-size:20px">SwankyBoyz</a>
   </header>
   <main style="padding:18px;max-width:900px;margin:18px auto;">
+    <!-- Affiliate Disclosure Notice (FTC Compliance) -->
+    <div style="background:#2a2416;border-left:4px solid #ffd700;padding:14px;border-radius:4px;margin-bottom:18px;font-size:0.95em;color:#ddd;">
+      <strong style="color:#ffd700">📢 Disclosure:</strong> SwankyBoyz is a participant in affiliate programs. We earn commission from qualified purchases at no extra cost to you. Read our full <a href="/affiliate-policy.html" style="color:#0ea5e9;text-decoration:underline">affiliate policy</a>.
+    </div>
     <article style="background:linear-gradient(180deg,#0f0f0f,#0b0b0b);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.6);padding:24px;">
       <h1 style="color:#ffd700;margin-top:0">${escapeHtml(title)}</h1>
-      <p style="color:#bbb;font-size:1.1em;font-style:italic">${escapeHtml(meta.excerpt || '')}</p>
+      <p style="color:#bbb;font-size:1.1em;font-style:italic;margin-bottom:18px">${escapeHtml(meta.excerpt || '')}</p>
+      <p style="color:#999;font-size:0.9em;margin-bottom:18px;">
+        <strong>Category:</strong> ${escapeHtml(meta.category || 'Lifestyle')} | 
+        <strong>Published:</strong> ${escapeHtml(meta.date || new Date().toLocaleDateString())}
+      </p>
       <hr style="border:none;border-top:1px solid #333;margin:18px 0" />
       <div class="content">${contentHtml}</div>
       <hr style="border:none;border-top:1px solid #333;margin:24px 0" />
-      <div style="background:#1a1a1a;padding:16px;border-radius:8px;margin:18px 0;border-left:4px solid #ffd700;">
-        <p style="margin:0 0 10px 0"><strong>Affiliate Disclosure:</strong> This article contains affiliate links. We may earn a commission at no extra cost to you.</p>
-        <a class="affiliate-cta" href="https://www.amazon.com/" target="_blank" rel="nofollow sponsored" data-campaign="${slug}" style="display:inline-block;background:#ffd700;color:#111;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:600;transition:background 0.3s">Shop on Amazon</a>
+      
+      <!-- Primary CTA -->
+      <div style="background:#1a1a1a;padding:20px;border-radius:8px;margin:24px 0;border-left:4px solid #ffd700;text-align:center;">
+        <p style="margin:0 0 16px 0;color:#ccc;font-size:1.05em"><strong>Find this item online:</strong></p>
+        <a class="affiliate-cta" href="https://www.amazon.com/" target="_blank" rel="nofollow sponsored" data-campaign="${slug}" style="display:inline-block;background:linear-gradient(135deg, #ffd700, #ffed4e);color:#000;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:1.05em;transition:all 0.3s;box-shadow:0 4px 12px rgba(255,215,0,0.3);margin-right:10px;">View on Amazon →</a>
+        <a class="affiliate-cta" href="https://www.booking.com/" target="_blank" rel="nofollow sponsored" data-campaign="${slug}" style="display:inline-block;background:linear-gradient(135deg, #003580, #0052c3);color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:1.05em;transition:all 0.3s;box-shadow:0 4px 12px rgba(0,83,195,0.3);">More Options →</a>
+      </div>
+
+      <!-- Related Products / Articles -->
+      <div style="background:#0f0f0f;padding:18px;border-radius:8px;margin:24px 0;">
+        <h3 style="color:#ffd700;margin-top:0">Related Articles</h3>
+        <p style="color:#999;">Browse similar reviews and recommendations from SwankyBoyz.</p>
+        <a href="/articles/index.html" style="color:#0ea5e9;text-decoration:none;font-weight:600">← Back to all articles</a>
       </div>
     </article>
   </main>
-  <footer style="padding:18px;text-align:center;color:#777;border-top:1px solid #222;margin-top:36px">&copy; ${new Date().getFullYear()} SwankyBoyz — Premium picks, real reviews</footer>
-  <script>
-    // Runtime affiliate tag injection via data attributes
-    const tag = localStorage.getItem('amazon_tag') || 'your-affiliate-tag-20';
-    document.querySelectorAll('.affiliate-link, .affiliate-cta').forEach(el => {
-      const href = new URL(el.href, location.origin);
-      if (!href.searchParams.has('tag')) href.searchParams.set('tag', tag);
-      href.searchParams.set('utm_source', 'swankyboyz');
-      href.searchParams.set('utm_medium', 'affiliate');
-      href.searchParams.set('utm_campaign', el.dataset.campaign || 'general');
-      el.href = href.toString();
-    });
-  </script>
+  <footer style="padding:18px;text-align:center;color:#777;border-top:1px solid #222;margin-top:36px;font-size:0.9em;">
+    <p>&copy; ${new Date().getFullYear()} SwankyBoyz — Premium picks, real reviews | <a href="/affiliate-policy.html" style="color:#0ea5e9;text-decoration:none">Affiliate Policy</a> | <a href="/privacy.html" style="color:#0ea5e9;text-decoration:none">Privacy</a></p>
+  </footer>
 </body>
 </html>`;
 }
@@ -227,9 +239,10 @@ async function build() {
     const { meta, body } = parseFrontmatter(md);
     const title = meta.title || f.replace(/\.md$/, '');
     const slug = meta.slug || slugify(title);
+    const productId = meta.product_id || slug;
 
     const htmlBody = await mdToHtml(body || '');
-    const transformed = transformAffiliateLinks(htmlBody, slug);
+    const transformed = transformAffiliateLinks(htmlBody, slug, productId);
 
     const page = makePage({ title, meta, contentHtml: transformed, slug });
     const outPath = path.join(articlesDir, `${slug}.html`);
