@@ -122,19 +122,23 @@ async function optimizeImage(imagePath, outputDir, basename) {
   }
 }
 
-function transformAffiliateLinks(html, slug) {
-  // Add rel/nofollow and target; UTM params will be injected at request time via Worker
+function transformAffiliateLinks(html, slug, productId) {
+  // Convert affiliate links to /r redirect URLs for centralized tracking & tag injection
   return html.replace(/<a[^>]*href=\"([^\"]+)\"[^>]*>(.*?)<\/a>/g, (m, href, text) => {
     try {
       const url = new URL(href, 'https://swankyboyz.com');
-      if (/amazon\./i.test(url.hostname)) {
-        // Mark as affiliate link; worker will inject tag
-        return `<a href="${url.toString()}" rel="nofollow sponsored" target="_blank" class="affiliate-link" data-campaign="${slug}">${text}</a>`;
+      // Detect affiliate networks
+      if (/amazon\./i.test(url.hostname) || /booking\.com/.test(url.hostname) || /agoda\.com/.test(url.hostname) || /getyourguide/.test(url.hostname)) {
+        // Rewrite to /r redirect endpoint
+        const encodedHref = encodeURIComponent(url.toString());
+        const pid = productId || slug;
+        const redirectUrl = `/r?site=swankyboyz&id=${pid}&href=${encodedHref}&article=${slug}`;
+        return `<a href="${redirectUrl}" rel="nofollow sponsored" target="_blank" class="affiliate-link" data-campaign="${slug}" data-product="${pid}">${text}</a>`;
       }
     } catch (e) {
       // ignore
     }
-    // Non-amazon links: open external links in new tab if absolute
+    // Non-affiliate external links: open in new tab
     if (/^https?:\/\//i.test(href)) return `<a href="${href}" target="_blank" rel="noopener">${text}</a>`;
     return `<a href="${href}">${text}</a>`;
   });
