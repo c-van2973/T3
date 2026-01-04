@@ -1,7 +1,5 @@
 -- D1 (SQLite-compatible) migration: initial schema
 
-BEGIN TRANSACTION;
-
 -- Products table for SwankyBoyz affiliate catalog
 CREATE TABLE IF NOT EXISTS products (
   id TEXT PRIMARY KEY,
@@ -132,6 +130,3 @@ CREATE INDEX IF NOT EXISTS idx_analytics_affiliate ON analytics(affiliate_networ
 CREATE INDEX IF NOT EXISTS idx_analytics_created ON analytics(created_at);
 CREATE INDEX IF NOT EXISTS idx_subscribers_site ON subscribers(site);
 CREATE INDEX IF NOT EXISTS idx_subscribers_email ON subscribers(email);
-
-COMMIT;
-
